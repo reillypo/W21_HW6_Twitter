@@ -1,2 +1,6 @@
 #ignore API keys file
 secrets.py
+
+.DS_store
+
+__pycache__

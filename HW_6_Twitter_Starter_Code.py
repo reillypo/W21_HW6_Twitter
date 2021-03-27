@@ -123,10 +123,7 @@ def make_request(baseurl, params):
         a dictionary
     '''
     #TODO Implement function
-    if params:
-        response = requests.get(baseurl, params)
-    else:
-        response = requests.get(baseurl)
+    response = requests.get(baseurl, params, auth=oauth)
 
     return response.json()
 
@@ -149,9 +146,9 @@ def make_request_with_cache(baseurl, hashtag, count):
     baseurl: string
         The URL for the API endpoint
     hashtag: string
-        The hashtag to search for
+        The hashtag to search for (i.e. #MarchMadness2021)
     count: integer
-        The number of results you request from Twitter
+        The number of tweets to retrieve
     
     Returns
     -------
@@ -160,7 +157,16 @@ def make_request_with_cache(baseurl, hashtag, count):
         JSON
     '''
     #TODO Implement function
-    pass
+    params = {"q": f'{hashtag}', "count":f'{count}'}
+    request_key = construct_unique_key(baseurl, params)
+    if request_key in CACHE_DICT.keys():
+        print("Cache found", request_key)
+        return CACHE_DICT[request_key]
+    else:
+        print("Cache not found", request_key)
+        CACHE_DICT[request_key] = make_request(baseurl, params)
+        save_cache(CACHE_DICT)
+        return CACHE_DICT[request_key]
 
 
 def find_most_common_cooccurring_hashtag(tweet_data, hashtag_to_ignore):
@@ -183,7 +189,26 @@ def find_most_common_cooccurring_hashtag(tweet_data, hashtag_to_ignore):
 
     '''
     # TODO: Implement function 
-    pass
+    statuslist = tweet_data["statuses"]
+    hashtag_list = []
+    # print(statuslist)
+    for x in statuslist:
+        for tag in x["entities"]["hashtags"]:
+            hashtag_list.append(tag["text"])
+    # print(hashtag_list)
+    # print(hashtag_to_ignore)
+    num_occ_dict = {}
+    count, itm = 0, ''
+    for item in hashtag_list:
+        # print(item)
+        if "#"+str(item).lower() != hashtag_to_ignore.lower():
+            num_occ_dict[item] = num_occ_dict.get(item, 0) + 1
+            if num_occ_dict[item] >= count:
+                count, itm = num_occ_dict[item], item
+    return("#"+itm)
+
+
+    
     ''' Hint: In case you're confused about the hashtag_to_ignore 
     parameter, we want to ignore the hashtag we queried because it would 
     definitely be the most occurring hashtag, and we're trying to find 
